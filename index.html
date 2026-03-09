@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#2d6a4f">
+  <meta name="description" content="Sistema de gestão de pequeno rebanho de gado">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/style.css">
+  <title>Gestão de Rebanho</title>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="app-header">
+    <button class="header-back" id="btnBack" onclick="App.goBack()">&#8592;</button>
+    <h1 id="headerTitle">Gestão de Rebanho</h1>
+  </header>
+
+  <!-- Offline indicator -->
+  <div class="offline-bar" id="offlineBar">Sem conexão com a internet</div>
+
+  <!-- Sync indicator -->
+  <div class="sync-bar" id="syncBar" onclick="Sync.syncNow()"></div>
+
+  <!-- Toast container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Main content area -->
+  <main class="main-content">
+
+    <!-- ===== DASHBOARD ===== -->
+    <section class="screen active" id="screenDashboard">
+      <div class="stats-grid" id="statsGrid"></div>
+
+      <div class="quick-actions">
+        <button class="btn-quick" onclick="App.navigate('cadastroAnimal')">
+          <span class="btn-icon">➕</span> Cadastrar Animal
+        </button>
+        <button class="btn-quick" onclick="App.navigate('registrarMedicacao')">
+          <span class="btn-icon">💊</span> Registrar Medicação
+        </button>
+        <button class="btn-quick" onclick="App.navigate('registrarCio')">
+          <span class="btn-icon">🐄</span> Registrar Cio
+        </button>
+      </div>
+
+      <div class="alert-section" id="alertPartos">
+        <h3>🐄 Previsão de Partos (próximos 30 dias)</h3>
+        <div id="alertPartosContent"></div>
+      </div>
+
+      <div class="alert-section" id="alertMedicacoes">
+        <h3>💊 Animais sem Medicação Recente</h3>
+        <div id="alertMedicacoesContent"></div>
+      </div>
+    </section>
+
+    <!-- ===== LISTA DE ANIMAIS ===== -->
+    <section class="screen" id="screenAnimais">
+      <div class="filters-bar">
+        <input type="text" id="filterBusca" placeholder="Buscar por nome ou código..." oninput="Animais.applyFilters()">
+        <select id="filterCategoria" onchange="Animais.applyFilters()">
+          <option value="">Todas</option>
+          <option value="vaca">Vacas</option>
+          <option value="touro">Touros</option>
+          <option value="novilha">Novilhas</option>
+          <option value="novilho">Novilhos</option>
+          <option value="terneira">Terneiras</option>
+          <option value="terneiro">Terneiros</option>
+        </select>
+      </div>
+      <div id="animaisList"></div>
+    </section>
+
+    <!-- ===== CADASTRO DE ANIMAL ===== -->
+    <section class="screen" id="screenCadastroAnimal">
+      <h2 class="section-title">Cadastrar Novo Animal</h2>
+
+      <div class="form-group">
+        <label for="cadNome">Nome *</label>
+        <input type="text" id="cadNome" placeholder="Ex: Mimosa, Trovão..." oninput="Animais.previewCode()">
+      </div>
+
+      <div class="form-group">
+        <label for="cadCategoria">Categoria *</label>
+        <select id="cadCategoria" onchange="Animais.onCategoriaChange()">
+          <option value="">Selecione...</option>
+          <option value="vaca">Vaca</option>
+          <option value="touro">Touro</option>
+          <option value="novilha">Novilha</option>
+          <option value="novilho">Novilho</option>
+          <option value="terneira">Terneira</option>
+          <option value="terneiro">Terneiro</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="cadNascimento">Data de Nascimento</label>
+        <input type="date" id="cadNascimento">
+      </div>
+
+      <div class="form-group">
+        <label for="cadMae">Mãe</label>
+        <select id="cadMae" onchange="Animais.previewCode()">
+          <option value="">Desconhecida</option>
+        </select>
+        <span class="hint">Selecione a mãe se conhecida</span>
+      </div>
+
+      <div class="form-group">
+        <label for="cadPai">Pai</label>
+        <select id="cadPai" onchange="Animais.previewCode()">
+          <option value="">Desconhecido</option>
+        </select>
+        <span class="hint">Selecione o pai se conhecido</span>
+      </div>
+
+      <div class="form-group">
+        <label for="cadFoto">Link da Foto</label>
+        <input type="url" id="cadFoto" placeholder="Cole a URL da foto aqui">
+        <span class="hint">Suba a foto no Google Drive e cole o link aqui</span>
+      </div>
+
+      <div class="form-group">
+        <label for="cadObs">Observações</label>
+        <textarea id="cadObs" placeholder="Anotações opcionais..."></textarea>
+      </div>
+
+      <div class="code-preview" id="codePreview" style="display:none;">
+        <div class="code-label">Código que será gerado:</div>
+        <div class="code-value" id="codePreviewValue"></div>
+      </div>
+
+      <button class="btn btn-primary" id="btnSalvarAnimal" onclick="Animais.salvar()">Salvar Animal</button>
+    </section>
+
+    <!-- ===== EDITAR ANIMAL ===== -->
+    <section class="screen" id="screenEditarAnimal">
+      <h2 class="section-title">Editar Animal</h2>
+
+      <div class="form-group">
+        <label for="editNome">Nome *</label>
+        <input type="text" id="editNome">
+      </div>
+
+      <div class="form-group">
+        <label for="editNascimento">Data de Nascimento</label>
+        <input type="date" id="editNascimento">
+      </div>
+
+      <div class="form-group">
+        <label for="editMae">Mãe</label>
+        <select id="editMae">
+          <option value="">Desconhecida</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="editPai">Pai</label>
+        <select id="editPai">
+          <option value="">Desconhecido</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="editFoto">Link da Foto</label>
+        <input type="url" id="editFoto" placeholder="Cole a URL da foto aqui">
+      </div>
+
+      <div class="form-group">
+        <label for="editObs">Observações</label>
+        <textarea id="editObs"></textarea>
+      </div>
+
+      <button class="btn btn-primary" onclick="Animais.salvarEdicao()">Salvar Alterações</button>
+    </section>
+
+    <!-- ===== FICHA DO ANIMAL ===== -->
+    <section class="screen" id="screenFicha">
+      <div class="ficha-header">
+        <div class="ficha-photo" id="fichaPhoto"></div>
+        <div class="ficha-code" id="fichaCode"></div>
+        <div class="ficha-name" id="fichaName"></div>
+        <div class="ficha-category" id="fichaCategory"></div>
+      </div>
+
+      <div class="ficha-section">
+        <h3>Informações</h3>
+        <div id="fichaInfo"></div>
+      </div>
+
+      <div class="ficha-section" id="fichaGenealogia">
+        <h3>Árvore Genealógica</h3>
+        <div class="genealogy-tree" id="genealogyTree"></div>
+      </div>
+
+      <div class="btn-group" style="margin-bottom: 16px;">
+        <button class="btn btn-outline btn-sm" onclick="Animais.editarAnimal()">Editar</button>
+        <button class="btn btn-outline btn-sm" onclick="App.navigate('registrarMedicacao')">Medicação</button>
+        <button class="btn btn-outline btn-sm" id="btnFichaCio" onclick="App.navigate('registrarCio')" style="display:none;">Cio</button>
+      </div>
+
+      <div class="btn-group" style="margin-bottom: 16px;">
+        <button class="btn btn-secondary btn-sm" onclick="Animais.mudarCategoria()">Mudar Categoria</button>
+        <button class="btn btn-danger btn-sm" onclick="Animais.venderAnimal()">Vender</button>
+      </div>
+
+      <div class="ficha-section" id="fichaHistMedicacoes">
+        <h3>Histórico de Medicações</h3>
+        <div id="fichaMedicacoesList"></div>
+      </div>
+
+      <div class="ficha-section" id="fichaHistCios" style="display:none;">
+        <h3>Histórico de Cios</h3>
+        <div id="fichaCiosList"></div>
+      </div>
+    </section>
+
+    <!-- ===== REGISTRAR MEDICAÇÃO ===== -->
+    <section class="screen" id="screenRegistrarMedicacao">
+      <h2 class="section-title">Registrar Medicação</h2>
+
+      <div class="form-group">
+        <label for="medAnimal">Animal *</label>
+        <select id="medAnimal">
+          <option value="">Selecione o animal...</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="medNome">Nome da Medicação *</label>
+        <input type="text" id="medNome" placeholder="Ex: Ivermectina, Vacina Aftosa...">
+      </div>
+
+      <div class="form-group">
+        <label for="medTipo">Tipo *</label>
+        <select id="medTipo">
+          <option value="">Selecione...</option>
+          <option value="vacina">Vacina</option>
+          <option value="vermifugo">Vermífugo</option>
+          <option value="antibiotico">Antibiótico</option>
+          <option value="outro">Outro</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="medData">Data de Aplicação *</label>
+        <input type="date" id="medData">
+      </div>
+
+      <div class="form-group">
+        <label for="medProxima">Próxima Aplicação Prevista</label>
+        <input type="date" id="medProxima">
+      </div>
+
+      <div class="form-group">
+        <label for="medDose">Dose</label>
+        <input type="text" id="medDose" placeholder="Ex: 5ml, 2 comprimidos...">
+      </div>
+
+      <div class="form-group">
+        <label for="medObs">Observações</label>
+        <textarea id="medObs"></textarea>
+      </div>
+
+      <button class="btn btn-primary" onclick="Medicacoes.salvar()">Registrar Medicação</button>
+    </section>
+
+    <!-- ===== REGISTRAR CIO ===== -->
+    <section class="screen" id="screenRegistrarCio">
+      <h2 class="section-title">Registrar Cio</h2>
+
+      <div class="form-group">
+        <label for="cioVaca">Vaca *</label>
+        <select id="cioVaca">
+          <option value="">Selecione a vaca...</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="cioData">Data do Cio Observado *</label>
+        <input type="date" id="cioData" onchange="Cios.calcPrevisao()">
+      </div>
+
+      <div class="form-group">
+        <label for="cioTouro">Touro Envolvido</label>
+        <select id="cioTouro">
+          <option value="">Desconhecido</option>
+        </select>
+      </div>
+
+      <div class="code-preview" id="previsaoPartoPreview" style="display:none;">
+        <div class="code-label">Previsão de Parto:</div>
+        <div class="code-value" id="previsaoPartoValue"></div>
+      </div>
+
+      <div class="form-group">
+        <label for="cioObs">Observações</label>
+        <textarea id="cioObs"></textarea>
+      </div>
+
+      <button class="btn btn-primary" onclick="Cios.salvar()">Registrar Cio</button>
+    </section>
+
+    <!-- ===== CONFIGURAÇÕES ===== -->
+    <section class="screen" id="screenConfiguracoes">
+      <h2 class="section-title">Configurações</h2>
+
+      <div class="config-item">
+        <label for="configAlertaDias">Alertar medicação atrasada (dias)</label>
+        <input type="number" id="configAlertaDias" min="1" max="365">
+        <div class="config-hint">Animais sem medicação há mais de X dias aparecerão no alerta</div>
+      </div>
+
+      <button class="btn btn-primary" onclick="Config.salvar()" style="margin-bottom: 16px;">Salvar Configurações</button>
+
+      <div class="config-item">
+        <label>Próximo código de Vaca</label>
+        <div id="configProxVaca" style="font-size: 1.2rem; font-weight: 700; color: var(--green-main);"></div>
+      </div>
+
+      <div class="config-item">
+        <label>Próximo código de Touro</label>
+        <div id="configProxTouro" style="font-size: 1.2rem; font-weight: 700; color: var(--green-main);"></div>
+      </div>
+
+      <button class="btn btn-secondary" onclick="App.navigate('vendidos')" style="margin-top: 16px;">
+        Ver Animais Vendidos
+      </button>
+
+      <div class="config-item" style="margin-top: 16px;">
+        <label for="configApiUrl">URL da API (Google Apps Script)</label>
+        <input type="url" id="configApiUrl" placeholder="Cole a URL do Web App aqui">
+        <div class="config-hint">Obtenha esta URL ao publicar o Google Apps Script como Web App</div>
+      </div>
+
+      <button class="btn btn-outline" onclick="Config.salvarApiUrl()" style="margin-top: 8px;">Salvar URL da API</button>
+
+      <button class="btn btn-outline" onclick="Sync.syncNow()" style="margin-top: 16px;">
+        Sincronizar Agora
+      </button>
+    </section>
+
+    <!-- ===== ANIMAIS VENDIDOS ===== -->
+    <section class="screen" id="screenVendidos">
+      <h2 class="section-title">Animais Vendidos</h2>
+      <div id="vendidosList"></div>
+    </section>
+
+    <!-- ===== MUDAR CATEGORIA ===== -->
+    <section class="screen" id="screenMudarCategoria">
+      <h2 class="section-title">Mudar Categoria</h2>
+      <div id="mudarCategoriaInfo"></div>
+
+      <div class="form-group">
+        <label for="novaCategoria">Nova Categoria *</label>
+        <select id="novaCategoria" onchange="Animais.previewNovaCategoria()">
+          <option value="">Selecione...</option>
+        </select>
+      </div>
+
+      <div class="code-preview" id="novoCodPreview" style="display:none;">
+        <div class="code-label">Novo código:</div>
+        <div class="code-value" id="novoCodValue"></div>
+      </div>
+
+      <button class="btn btn-primary" onclick="Animais.confirmarMudarCategoria()">Confirmar Mudança</button>
+    </section>
+
+  </main>
+
+  <!-- Bottom navigation -->
+  <nav class="bottom-nav">
+    <button id="navDashboard" class="active" onclick="App.navigate('dashboard')">
+      <span class="nav-icon">🏠</span>
+      <span>Início</span>
+    </button>
+    <button id="navAnimais" onclick="App.navigate('animais')">
+      <span class="nav-icon">🐄</span>
+      <span>Animais</span>
+    </button>
+    <button id="navMedicacao" onclick="App.navigate('registrarMedicacao')">
+      <span class="nav-icon">💊</span>
+      <span>Medicação</span>
+    </button>
+    <button id="navCio" onclick="App.navigate('registrarCio')">
+      <span class="nav-icon">📅</span>
+      <span>Cio</span>
+    </button>
+    <button id="navConfig" onclick="App.navigate('configuracoes')">
+      <span class="nav-icon">⚙️</span>
+      <span>Config</span>
+    </button>
+  </nav>
+
+  <!-- Modal container -->
+  <div id="modalContainer"></div>
+
+  <!-- Scripts -->
+  <script src="js/utils.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/sync.js"></script>
+  <script src="js/animais.js"></script>
+  <script src="js/medicacoes.js"></script>
+  <script src="js/cios.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>
