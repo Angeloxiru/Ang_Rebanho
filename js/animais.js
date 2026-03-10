@@ -4,12 +4,16 @@
 
 const Animais = {
   currentAnimalId: null, // Animal being viewed/edited
-  capturedPhotos: { cad: '', edit: '' }, // Stores base64 or URL for each form
+  photos: { cad: [], edit: [] }, // Stores up to 3 photos per form
 
   /**
    * Abre a câmera para tirar foto
    */
   tirarFoto(prefix) {
+    if (Animais.photos[prefix].length >= 3) {
+      Utils.toast('Máximo de 3 fotos atingido', 'error');
+      return;
+    }
     document.getElementById(prefix + 'FotoFile').click();
   },
 
@@ -17,6 +21,10 @@ const Animais = {
    * Abre a galeria para escolher foto
    */
   escolherFoto(prefix) {
+    if (Animais.photos[prefix].length >= 3) {
+      Utils.toast('Máximo de 3 fotos atingido', 'error');
+      return;
+    }
     document.getElementById(prefix + 'FotoGaleria').click();
   },
 
@@ -29,13 +37,33 @@ const Animais = {
   },
 
   /**
+   * Adiciona foto via URL
+   */
+  addUrlPhoto(prefix) {
+    if (Animais.photos[prefix].length >= 3) {
+      Utils.toast('Máximo de 3 fotos atingido', 'error');
+      return;
+    }
+    const urlInput = document.getElementById(prefix + 'Foto');
+    const url = urlInput.value.trim();
+    if (!url) return;
+    Animais.photos[prefix].push(url);
+    urlInput.value = '';
+    Animais.renderPhotoThumbs(prefix);
+  },
+
+  /**
    * Quando uma foto é selecionada (câmera ou galeria)
    */
   onFotoSelected(input, prefix) {
     const file = input.files[0];
     if (!file) return;
+    if (Animais.photos[prefix].length >= 3) {
+      Utils.toast('Máximo de 3 fotos atingido', 'error');
+      input.value = '';
+      return;
+    }
 
-    // Resize image to save storage space
     const reader = new FileReader();
     reader.onload = function(e) {
       const img = new Image();
@@ -52,46 +80,52 @@ const Animais = {
         canvas.height = h;
         canvas.getContext('2d').drawImage(img, 0, 0, w, h);
         const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-        Animais.capturedPhotos[prefix] = dataUrl;
-        Animais.showPhotoPreview(prefix, dataUrl);
+        Animais.photos[prefix].push(dataUrl);
+        Animais.renderPhotoThumbs(prefix);
       };
       img.src = e.target.result;
     };
     reader.readAsDataURL(file);
-    // Reset input so same file can be selected again
     input.value = '';
   },
 
   /**
-   * Mostra preview da foto capturada
+   * Renderiza as thumbnails de fotos no formulário
    */
-  showPhotoPreview(prefix, src) {
-    const preview = document.getElementById(prefix + 'PhotoPreview');
-    preview.innerHTML = `<img src="${src}" alt="Foto do animal">`;
-    document.getElementById(prefix + 'RemovePhoto').style.display = 'block';
-  },
+  renderPhotoThumbs(prefix) {
+    const container = document.getElementById(prefix + 'PhotoThumbs');
+    const photos = Animais.photos[prefix];
 
-  /**
-   * Remove a foto capturada
-   */
-  removerFoto(prefix) {
-    Animais.capturedPhotos[prefix] = '';
-    const preview = document.getElementById(prefix + 'PhotoPreview');
-    preview.innerHTML = '<span class="photo-placeholder">📷</span>';
-    document.getElementById(prefix + 'RemovePhoto').style.display = 'none';
-    document.getElementById(prefix + 'Foto').value = '';
-  },
-
-  /**
-   * Retorna a URL/base64 da foto do formulário
-   */
-  getFotoValue(prefix) {
-    // Priority: captured photo > URL input
-    if (Animais.capturedPhotos[prefix]) {
-      return Animais.capturedPhotos[prefix];
+    if (photos.length === 0) {
+      container.innerHTML = '<div class="photo-empty-hint">Nenhuma foto adicionada</div>';
+    } else {
+      container.innerHTML = photos.map((src, i) => `
+        <div class="photo-thumb">
+          <img src="${src}" alt="Foto ${i + 1}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22/>'">
+          <button type="button" class="photo-thumb-remove" onclick="Animais.removerFoto('${prefix}', ${i})">X</button>
+          <span class="photo-thumb-num">${i + 1}</span>
+        </div>
+      `).join('');
     }
-    const urlInput = document.getElementById(prefix + 'Foto');
-    return urlInput ? urlInput.value.trim() : '';
+
+    // Hide capture buttons if 3 photos reached
+    const captureEl = document.getElementById(prefix + 'PhotoCapture');
+    captureEl.style.display = photos.length >= 3 ? 'none' : '';
+  },
+
+  /**
+   * Remove uma foto pelo índice
+   */
+  removerFoto(prefix, index) {
+    Animais.photos[prefix].splice(index, 1);
+    Animais.renderPhotoThumbs(prefix);
+  },
+
+  /**
+   * Retorna array de fotos do formulário (para salvar)
+   */
+  getPhotosArray(prefix) {
+    return Animais.photos[prefix].slice(0, 3);
   },
 
   /**
@@ -181,7 +215,7 @@ const Animais = {
     const codigoMae = document.getElementById('cadMae').value;
     const codigoPai = document.getElementById('cadPai').value;
     const campo = document.getElementById('cadCampo').value;
-    const fotoUrl = Animais.getFotoValue('cad');
+    const fotos = Animais.getPhotosArray('cad');
     const obs = document.getElementById('cadObs').value.trim();
 
     if (!nome) {
@@ -212,7 +246,9 @@ const Animais = {
       codigo_pai: codigoPai || '',
       campo: campo,
       campo_desde: today,
-      foto_url: fotoUrl || '',
+      foto_url: fotos[0] || '',
+      foto_url2: fotos[1] || '',
+      foto_url3: fotos[2] || '',
       data_cadastro: today,
       status: 'ativo',
       data_venda: '',
@@ -235,9 +271,8 @@ const Animais = {
     document.getElementById('cadMae').value = '';
     document.getElementById('cadPai').value = '';
     document.getElementById('cadFoto').value = '';
-    Animais.capturedPhotos.cad = '';
-    document.getElementById('cadPhotoPreview').innerHTML = '<span class="photo-placeholder">📷</span>';
-    document.getElementById('cadRemovePhoto').style.display = 'none';
+    Animais.photos.cad = [];
+    Animais.renderPhotoThumbs('cad');
     document.getElementById('cadObs').value = '';
     document.getElementById('codePreview').style.display = 'none';
 
@@ -349,10 +384,16 @@ const Animais = {
       return;
     }
 
-    // Header
+    // Header — photo gallery
     const photoEl = document.getElementById('fichaPhoto');
-    if (animal.foto_url) {
-      photoEl.innerHTML = `<img src="${animal.foto_url}" alt="${animal.nome}" onerror="this.parentElement.innerHTML='${Utils.categoryEmoji(animal.categoria)}'">`;
+    const allPhotos = [animal.foto_url, animal.foto_url2, animal.foto_url3].filter(u => u);
+    if (allPhotos.length > 0) {
+      photoEl.innerHTML = `<img src="${allPhotos[0]}" alt="${animal.nome}" onerror="this.parentElement.innerHTML='${Utils.categoryEmoji(animal.categoria)}'">`;
+      if (allPhotos.length > 1) {
+        photoEl.innerHTML += `<div class="ficha-photo-dots">${allPhotos.map((_, i) => `<span class="ficha-dot${i === 0 ? ' active' : ''}" onclick="Animais.showFichaPhoto(${i})"></span>`).join('')}</div>`;
+        Animais._fichaPhotos = allPhotos;
+        Animais._fichaPhotoIndex = 0;
+      }
     } else {
       photoEl.innerHTML = Utils.categoryEmoji(animal.categoria);
     }
@@ -457,6 +498,21 @@ const Animais = {
   },
 
   /**
+   * Alterna foto na ficha do animal
+   */
+  showFichaPhoto(index) {
+    const photos = Animais._fichaPhotos;
+    if (!photos || !photos[index]) return;
+    Animais._fichaPhotoIndex = index;
+    const photoEl = document.getElementById('fichaPhoto');
+    const img = photoEl.querySelector('img');
+    if (img) img.src = photos[index];
+    photoEl.querySelectorAll('.ficha-dot').forEach((dot, i) => {
+      dot.classList.toggle('active', i === index);
+    });
+  },
+
+  /**
    * Abre a tela de edição do animal atual
    */
   async editarAnimal() {
@@ -470,14 +526,9 @@ const Animais = {
     document.getElementById('editCampo').value = animal.campo || '';
     document.getElementById('editMae').value = animal.codigo_mae || '';
     document.getElementById('editPai').value = animal.codigo_pai || '';
-    // Load existing photo into preview
-    Animais.capturedPhotos.edit = animal.foto_url || '';
-    if (animal.foto_url) {
-      Animais.showPhotoPreview('edit', animal.foto_url);
-    } else {
-      document.getElementById('editPhotoPreview').innerHTML = '<span class="photo-placeholder">📷</span>';
-      document.getElementById('editRemovePhoto').style.display = 'none';
-    }
+    // Load existing photos
+    Animais.photos.edit = [animal.foto_url, animal.foto_url2, animal.foto_url3].filter(u => u);
+    Animais.renderPhotoThumbs('edit');
     document.getElementById('editFoto').value = '';
     document.getElementById('editObs').value = animal.observacoes || '';
 
@@ -507,7 +558,10 @@ const Animais = {
     }
     animal.codigo_mae = document.getElementById('editMae').value || '';
     animal.codigo_pai = document.getElementById('editPai').value || '';
-    animal.foto_url = Animais.getFotoValue('edit') || '';
+    const editPhotos = Animais.getPhotosArray('edit');
+    animal.foto_url = editPhotos[0] || '';
+    animal.foto_url2 = editPhotos[1] || '';
+    animal.foto_url3 = editPhotos[2] || '';
     animal.observacoes = document.getElementById('editObs').value.trim() || '';
 
     await DB.saveAnimal(animal);
