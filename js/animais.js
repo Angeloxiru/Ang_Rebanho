@@ -4,6 +4,95 @@
 
 const Animais = {
   currentAnimalId: null, // Animal being viewed/edited
+  capturedPhotos: { cad: '', edit: '' }, // Stores base64 or URL for each form
+
+  /**
+   * Abre a câmera para tirar foto
+   */
+  tirarFoto(prefix) {
+    document.getElementById(prefix + 'FotoFile').click();
+  },
+
+  /**
+   * Abre a galeria para escolher foto
+   */
+  escolherFoto(prefix) {
+    document.getElementById(prefix + 'FotoGaleria').click();
+  },
+
+  /**
+   * Toggle do campo de URL
+   */
+  toggleUrlInput(prefix) {
+    const urlDiv = document.getElementById(prefix + 'UrlInput');
+    urlDiv.style.display = urlDiv.style.display === 'none' ? 'block' : 'none';
+  },
+
+  /**
+   * Quando uma foto é selecionada (câmera ou galeria)
+   */
+  onFotoSelected(input, prefix) {
+    const file = input.files[0];
+    if (!file) return;
+
+    // Resize image to save storage space
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const img = new Image();
+      img.onload = function() {
+        const canvas = document.createElement('canvas');
+        const MAX = 800;
+        let w = img.width;
+        let h = img.height;
+        if (w > MAX || h > MAX) {
+          if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+          else { w = Math.round(w * MAX / h); h = MAX; }
+        }
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        Animais.capturedPhotos[prefix] = dataUrl;
+        Animais.showPhotoPreview(prefix, dataUrl);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+    // Reset input so same file can be selected again
+    input.value = '';
+  },
+
+  /**
+   * Mostra preview da foto capturada
+   */
+  showPhotoPreview(prefix, src) {
+    const preview = document.getElementById(prefix + 'PhotoPreview');
+    preview.innerHTML = `<img src="${src}" alt="Foto do animal">`;
+    document.getElementById(prefix + 'RemovePhoto').style.display = 'block';
+  },
+
+  /**
+   * Remove a foto capturada
+   */
+  removerFoto(prefix) {
+    Animais.capturedPhotos[prefix] = '';
+    const preview = document.getElementById(prefix + 'PhotoPreview');
+    preview.innerHTML = '<span class="photo-placeholder">📷</span>';
+    document.getElementById(prefix + 'RemovePhoto').style.display = 'none';
+    document.getElementById(prefix + 'Foto').value = '';
+  },
+
+  /**
+   * Retorna a URL/base64 da foto do formulário
+   */
+  getFotoValue(prefix) {
+    // Priority: captured photo > URL input
+    if (Animais.capturedPhotos[prefix]) {
+      return Animais.capturedPhotos[prefix];
+    }
+    const urlInput = document.getElementById(prefix + 'Foto');
+    return urlInput ? urlInput.value.trim() : '';
+  },
 
   /**
    * Popula selects de mãe e pai no formulário de cadastro
@@ -91,7 +180,7 @@ const Animais = {
     const nascimento = document.getElementById('cadNascimento').value;
     const codigoMae = document.getElementById('cadMae').value;
     const codigoPai = document.getElementById('cadPai').value;
-    const fotoUrl = document.getElementById('cadFoto').value.trim();
+    const fotoUrl = Animais.getFotoValue('cad');
     const obs = document.getElementById('cadObs').value.trim();
 
     if (!nome) {
@@ -137,6 +226,9 @@ const Animais = {
     document.getElementById('cadMae').value = '';
     document.getElementById('cadPai').value = '';
     document.getElementById('cadFoto').value = '';
+    Animais.capturedPhotos.cad = '';
+    document.getElementById('cadPhotoPreview').innerHTML = '<span class="photo-placeholder">📷</span>';
+    document.getElementById('cadRemovePhoto').style.display = 'none';
     document.getElementById('cadObs').value = '';
     document.getElementById('codePreview').style.display = 'none';
 
@@ -328,7 +420,15 @@ const Animais = {
     document.getElementById('editNascimento').value = animal.data_nascimento || '';
     document.getElementById('editMae').value = animal.codigo_mae || '';
     document.getElementById('editPai').value = animal.codigo_pai || '';
-    document.getElementById('editFoto').value = animal.foto_url || '';
+    // Load existing photo into preview
+    Animais.capturedPhotos.edit = animal.foto_url || '';
+    if (animal.foto_url) {
+      Animais.showPhotoPreview('edit', animal.foto_url);
+    } else {
+      document.getElementById('editPhotoPreview').innerHTML = '<span class="photo-placeholder">📷</span>';
+      document.getElementById('editRemovePhoto').style.display = 'none';
+    }
+    document.getElementById('editFoto').value = '';
     document.getElementById('editObs').value = animal.observacoes || '';
 
     App.navigate('editarAnimal');
@@ -351,7 +451,7 @@ const Animais = {
     animal.data_nascimento = document.getElementById('editNascimento').value || '';
     animal.codigo_mae = document.getElementById('editMae').value || '';
     animal.codigo_pai = document.getElementById('editPai').value || '';
-    animal.foto_url = document.getElementById('editFoto').value.trim() || '';
+    animal.foto_url = Animais.getFotoValue('edit') || '';
     animal.observacoes = document.getElementById('editObs').value.trim() || '';
 
     await DB.saveAnimal(animal);
