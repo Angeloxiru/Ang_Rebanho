@@ -18,6 +18,9 @@ const App = {
       // Init sync
       Sync.init();
 
+      // Check auto-promotion of terneiros
+      await App.checkAutoPromotion();
+
       // Render initial screen
       await Dashboard.render();
 
@@ -42,6 +45,38 @@ const App = {
     } catch (err) {
       console.error('Erro ao inicializar app:', err);
       Utils.toast('Erro ao inicializar o aplicativo', 'error');
+    }
+  },
+
+  /**
+   * Verifica se há terneiros/terneiras que devem ser promovidos automaticamente
+   */
+  async checkAutoPromotion() {
+    const meses = parseInt(await DB.getConfig('auto_promocao_meses') || '12', 10);
+    const animais = await DB.getAnimaisAtivos();
+    const today = Utils.today();
+    let promoted = 0;
+
+    for (const animal of animais) {
+      if (!['terneira', 'terneiro'].includes(animal.categoria)) continue;
+      if (!animal.data_nascimento) continue;
+
+      const nascimento = new Date(animal.data_nascimento + 'T00:00:00');
+      const limite = new Date(nascimento);
+      limite.setMonth(limite.getMonth() + meses);
+      const limiteStr = limite.toISOString().split('T')[0];
+
+      if (today >= limiteStr) {
+        const novaCategoria = animal.categoria === 'terneira' ? 'novilha' : 'novilho';
+        animal.categoria = novaCategoria;
+        await DB.saveAnimal(animal);
+        await Sync.queueOperation('updateAnimal', animal);
+        promoted++;
+      }
+    }
+
+    if (promoted > 0) {
+      Utils.toast(`${promoted} animal(is) promovido(s) automaticamente!`, 'success');
     }
   },
 

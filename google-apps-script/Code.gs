@@ -22,7 +22,7 @@ function getSheet(name) {
     sheet = ss.insertSheet(name);
     // Add headers
     const headers = {
-      'Animais': ['id', 'codigo', 'codigo_origem', 'nome', 'categoria', 'data_nascimento', 'codigo_mae', 'codigo_pai', 'foto_url', 'data_cadastro', 'status', 'data_venda', 'observacoes'],
+      'Animais': ['id', 'codigo', 'codigo_origem', 'nome', 'categoria', 'data_nascimento', 'codigo_mae', 'codigo_pai', 'campo', 'campo_desde', 'foto_url', 'data_cadastro', 'status', 'data_venda', 'observacoes'],
       'Medicacoes': ['id', 'animal_id', 'codigo_animal', 'nome_medicacao', 'tipo', 'data_aplicacao', 'proxima_aplicacao', 'dose', 'observacoes'],
       'Cios': ['id', 'animal_id', 'codigo_vaca', 'data_cio', 'codigo_touro', 'previsao_parto', 'status', 'observacoes'],
       'Configuracoes': ['chave', 'valor']

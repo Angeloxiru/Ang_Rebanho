@@ -153,6 +153,14 @@ const Utils = {
   /**
    * Retorna label traduzido da categoria
    */
+  campoLabel(campo) {
+    const labels = {
+      campo_cima: 'Campo de Cima',
+      campo_baixo: 'Campo de Baixo'
+    };
+    return labels[campo] || 'Sem campo';
+  },
+
   categoryLabel(categoria) {
     const labels = {
       vaca: 'Vaca',

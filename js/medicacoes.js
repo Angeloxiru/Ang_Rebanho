@@ -52,9 +52,10 @@ const Medicacoes = {
     const container = document.getElementById('medAnimalList');
     container.innerHTML = animais.map(a => `
       <label class="med-animal-item">
-        <input type="checkbox" value="${a.id}" onchange="Medicacoes.updateLoteCount()">
+        <input type="checkbox" value="${a.id}" data-campo="${a.campo || ''}" onchange="Medicacoes.updateLoteCount()">
         <span class="med-animal-code">${a.codigo}</span>
         <span class="med-animal-name">${a.nome}</span>
+        ${a.campo ? `<span class="badge-campo badge-${a.campo}" style="font-size:0.7rem;margin-left:auto;">${Utils.campoLabel(a.campo)}</span>` : ''}
       </label>
     `).join('');
 
@@ -82,6 +83,16 @@ const Medicacoes = {
    */
   deselecionarTodos() {
     document.querySelectorAll('#medAnimalList input[type="checkbox"]').forEach(cb => cb.checked = false);
+    Medicacoes.updateLoteCount();
+  },
+
+  /**
+   * Seleciona todos os animais de um campo específico
+   */
+  selecionarPorCampo(campo) {
+    document.querySelectorAll('#medAnimalList input[type="checkbox"]').forEach(cb => {
+      cb.checked = cb.dataset.campo === campo;
+    });
     Medicacoes.updateLoteCount();
   },
 
