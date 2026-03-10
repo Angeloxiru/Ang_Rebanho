@@ -52,6 +52,18 @@ function initSheets() {
 }
 
 // ---- Helpers ----
+function formatCellValue(value) {
+  if (value === undefined || value === null || value === '') return '';
+  // Handle Date objects from Sheets — convert to YYYY-MM-DD
+  if (value instanceof Date) {
+    var y = value.getFullYear();
+    var m = ('0' + (value.getMonth() + 1)).slice(-2);
+    var d = ('0' + value.getDate()).slice(-2);
+    return y + '-' + m + '-' + d;
+  }
+  return String(value);
+}
+
 function sheetToArray(sheet) {
   const data = sheet.getDataRange().getValues();
   if (data.length <= 1) return [];
@@ -61,7 +73,7 @@ function sheetToArray(sheet) {
   for (let i = 1; i < data.length; i++) {
     const row = {};
     headers.forEach((h, j) => {
-      row[h] = data[i][j] !== undefined && data[i][j] !== null ? String(data[i][j]) : '';
+      row[h] = formatCellValue(data[i][j]);
     });
     rows.push(row);
   }
@@ -143,6 +155,10 @@ function doPost(e) {
     switch (action) {
       case 'addAnimal': {
         const sheet = getSheet('Animais');
+        // Prevent duplicates — check if ID already exists
+        if (findRowIndex(sheet, body.id) !== -1) {
+          return response(true, { id: body.id, duplicate: true }, null);
+        }
         const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
         const row = objectToRow(body, headers);
         sheet.appendRow(row);
@@ -152,11 +168,14 @@ function doPost(e) {
       case 'updateAnimal': {
         const sheet = getSheet('Animais');
         const rowIndex = findRowIndex(sheet, body.id);
-        if (rowIndex === -1) return response(false, null, 'Animal não encontrado');
-
         const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
         const row = objectToRow(body, headers);
-        sheet.getRange(rowIndex, 1, 1, headers.length).setValues([row]);
+        if (rowIndex === -1) {
+          // Upsert: insert if not found
+          sheet.appendRow(row);
+        } else {
+          sheet.getRange(rowIndex, 1, 1, headers.length).setValues([row]);
+        }
         return response(true, { id: body.id }, null);
       }
 
@@ -192,6 +211,9 @@ function doPost(e) {
 
       case 'addMedicacao': {
         const sheet = getSheet('Medicacoes');
+        if (findRowIndex(sheet, body.id) !== -1) {
+          return response(true, { id: body.id, duplicate: true }, null);
+        }
         const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
         const row = objectToRow(body, headers);
         sheet.appendRow(row);
@@ -200,6 +222,9 @@ function doPost(e) {
 
       case 'addCio': {
         const sheet = getSheet('Cios');
+        if (findRowIndex(sheet, body.id) !== -1) {
+          return response(true, { id: body.id, duplicate: true }, null);
+        }
         const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
         const row = objectToRow(body, headers);
         sheet.appendRow(row);

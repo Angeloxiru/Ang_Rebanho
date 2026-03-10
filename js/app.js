@@ -73,7 +73,8 @@ const App = {
       registrarCio: { section: 'screenRegistrarCio', nav: 'navCio', title: 'Registrar Cio', back: true },
       configuracoes: { section: 'screenConfiguracoes', nav: 'navConfig', title: 'Configurações', back: false },
       vendidos: { section: 'screenVendidos', nav: null, title: 'Animais Vendidos', back: true },
-      mudarCategoria: { section: 'screenMudarCategoria', nav: null, title: 'Mudar Categoria', back: true }
+      mudarCategoria: { section: 'screenMudarCategoria', nav: null, title: 'Mudar Categoria', back: true },
+      timeline: { section: 'screenTimeline', nav: null, title: 'Timeline Medicações', back: true }
     };
 
     const config = screenMap[screen];
@@ -119,6 +120,9 @@ const App = {
         break;
       case 'vendidos':
         await Animais.renderVendidos();
+        break;
+      case 'timeline':
+        await Medicacoes.renderTimeline();
         break;
     }
 

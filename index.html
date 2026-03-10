@@ -47,6 +47,9 @@
         <button class="btn-quick" onclick="App.navigate('registrarCio')">
           <span class="btn-icon">🐄</span> Registrar Cio
         </button>
+        <button class="btn-quick" onclick="App.navigate('timeline')">
+          <span class="btn-icon">📊</span> Timeline Medicações
+        </button>
       </div>
 
       <div class="alert-section" id="alertPartos">
@@ -254,11 +257,28 @@
     <section class="screen" id="screenRegistrarMedicacao">
       <h2 class="section-title">Registrar Medicação</h2>
 
-      <div class="form-group">
+      <!-- Toggle: individual vs lote -->
+      <div class="med-mode-toggle" id="medModeToggle">
+        <button class="med-mode-btn active" id="btnMedIndividual" onclick="Medicacoes.setMode('individual')">Individual</button>
+        <button class="med-mode-btn" id="btnMedLote" onclick="Medicacoes.setMode('lote')">Em Lote</button>
+      </div>
+
+      <!-- Individual: single select -->
+      <div class="form-group" id="medAnimalGroup">
         <label for="medAnimal">Animal *</label>
         <select id="medAnimal">
           <option value="">Selecione o animal...</option>
         </select>
+      </div>
+
+      <!-- Lote: multi-select with checkboxes -->
+      <div class="form-group" id="medLoteGroup" style="display:none;">
+        <label>Animais * <span class="hint" id="medLoteCount">(0 selecionados)</span></label>
+        <div class="med-select-actions">
+          <button type="button" class="btn btn-outline btn-sm" onclick="Medicacoes.selecionarTodos()">Todos</button>
+          <button type="button" class="btn btn-outline btn-sm" onclick="Medicacoes.deselecionarTodos()">Nenhum</button>
+        </div>
+        <div class="med-animal-list" id="medAnimalList"></div>
       </div>
 
       <div class="form-group">
@@ -298,6 +318,13 @@
       </div>
 
       <button class="btn btn-primary" onclick="Medicacoes.salvar()">Registrar Medicação</button>
+    </section>
+
+    <!-- ===== TIMELINE DE MEDICAÇÕES ===== -->
+    <section class="screen" id="screenTimeline">
+      <h2 class="section-title">Timeline de Medicações</h2>
+      <div class="timeline-legend" id="timelineLegend"></div>
+      <div class="timeline-container" id="timelineContainer"></div>
     </section>
 
     <!-- ===== REGISTRAR CIO ===== -->

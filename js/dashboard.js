@@ -96,44 +96,68 @@ const Dashboard = {
   },
 
   /**
-   * Renderiza alertas de animais sem medicação recente
+   * Renderiza alertas de medicações atrasadas
+   * Usa a data de "próxima aplicação" para determinar atraso
    */
   async renderAlertMedicacoes() {
-    const alertaDias = parseInt(await DB.getConfig('alerta_medicacao_dias') || '60', 10);
     const animais = await DB.getAnimaisAtivos();
     const medicacoes = await DB.getMedicacoes();
     const today = Utils.today();
 
-    // Find last medication date for each animal
-    const lastMed = {};
+    // Find overdue medications per animal (proxima_aplicacao already passed)
+    // Also find animals that were never medicated
+    const alertas = [];
+
+    // Build map: animal_id -> list of medications
+    const medByAnimal = {};
     medicacoes.forEach(m => {
-      if (!lastMed[m.animal_id] || m.data_aplicacao > lastMed[m.animal_id]) {
-        lastMed[m.animal_id] = m.data_aplicacao;
-      }
+      if (!medByAnimal[m.animal_id]) medByAnimal[m.animal_id] = [];
+      medByAnimal[m.animal_id].push(m);
     });
 
-    const alertas = [];
     animais.forEach(a => {
-      const lastDate = lastMed[a.id];
-      if (!lastDate) {
-        // Never medicated
+      const meds = medByAnimal[a.id];
+
+      if (!meds || meds.length === 0) {
+        // Never medicated — alert if registered for more than 30 days
         const daysSinceCadastro = Utils.diffDays(a.data_cadastro, today);
-        if (daysSinceCadastro >= alertaDias) {
+        if (daysSinceCadastro >= 30) {
           alertas.push({
             animal: a,
             dias: daysSinceCadastro,
-            message: 'Nunca medicado'
+            message: 'Nunca medicado',
+            severity: 'warning'
           });
         }
-      } else {
-        const daysSince = Utils.diffDays(lastDate, today);
-        if (daysSince >= alertaDias) {
-          alertas.push({
-            animal: a,
-            dias: daysSince,
-            message: `Última medicação há ${daysSince} dias`
+        return;
+      }
+
+      // Check for overdue medications (proxima_aplicacao < today)
+      const overdue = [];
+      meds.forEach(m => {
+        if (m.proxima_aplicacao && m.proxima_aplicacao < today) {
+          const diasAtraso = Utils.diffDays(m.proxima_aplicacao, today);
+          overdue.push({
+            medicacao: m.nome_medicacao,
+            tipo: m.tipo,
+            diasAtraso,
+            prevista: m.proxima_aplicacao
           });
         }
+      });
+
+      if (overdue.length > 0) {
+        // Sort by most overdue
+        overdue.sort((a, b) => b.diasAtraso - a.diasAtraso);
+        const worst = overdue[0];
+        alertas.push({
+          animal: a,
+          dias: worst.diasAtraso,
+          message: overdue.length === 1
+            ? `${worst.medicacao} atrasada ${worst.diasAtraso} dia${worst.diasAtraso !== 1 ? 's' : ''} (prevista: ${Utils.formatDate(worst.prevista)})`
+            : `${overdue.length} medicações atrasadas (pior: ${worst.medicacao}, ${worst.diasAtraso} dias)`,
+          severity: worst.diasAtraso > 30 ? 'danger' : 'warning'
+        });
       }
     });
 
@@ -142,10 +166,10 @@ const Dashboard = {
     const container = document.getElementById('alertMedicacoesContent');
 
     if (alertas.length === 0) {
-      container.innerHTML = `<p class="no-alerts">Todos os animais estão com medicação em dia (limite: ${alertaDias} dias)</p>`;
+      container.innerHTML = '<p class="no-alerts">Todos os animais estão com medicação em dia!</p>';
     } else {
       container.innerHTML = alertas.map(a => `
-        <div class="alert-item alert-medicacao" onclick="App.navigate('ficha', '${a.animal.id}')">
+        <div class="alert-item alert-medicacao ${a.severity === 'danger' ? 'alert-danger' : ''}" onclick="App.navigate('ficha', '${a.animal.id}')">
           <strong>${a.animal.codigo}</strong> — ${a.animal.nome}: ${a.message}
         </div>
       `).join('');
