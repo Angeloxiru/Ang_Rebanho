@@ -857,6 +857,248 @@ body {
   text-decoration: underline;
 }
 
+/* ---- Medication Mode Toggle ---- */
+.med-mode-toggle {
+  display: flex;
+  gap: 0;
+  margin-bottom: 16px;
+  border: 2px solid var(--green-main);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.med-mode-btn {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  background: var(--white);
+  color: var(--green-main);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+}
+
+.med-mode-btn.active {
+  background: var(--green-main);
+  color: var(--white);
+}
+
+.med-select-actions {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.med-select-actions .btn {
+  width: auto;
+  font-size: 0.8rem;
+  padding: 6px 12px;
+  min-height: 32px;
+}
+
+.med-animal-list {
+  max-height: 250px;
+  overflow-y: auto;
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  background: var(--white);
+}
+
+.med-animal-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--gray-100);
+  cursor: pointer;
+  font-weight: normal !important;
+}
+
+.med-animal-item:last-child {
+  border-bottom: none;
+}
+
+.med-animal-item input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--green-main);
+  flex-shrink: 0;
+}
+
+.med-animal-code {
+  font-weight: 700;
+  color: var(--green-main);
+  min-width: 40px;
+}
+
+.med-animal-name {
+  color: var(--gray-700);
+  font-size: 0.9rem;
+}
+
+/* ---- Alert danger ---- */
+.alert-item.alert-danger {
+  border-left-color: var(--red);
+  background: var(--red-light);
+}
+
+/* ---- Timeline ---- */
+.timeline-legend-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.timeline-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: var(--gray-700);
+}
+
+.timeline-legend-color {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  display: inline-block;
+}
+
+.timeline-legend-overdue {
+  background: repeating-linear-gradient(
+    45deg,
+    var(--red),
+    var(--red) 2px,
+    var(--red-light) 2px,
+    var(--red-light) 4px
+  );
+}
+
+.timeline-container {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.timeline-chart {
+  min-width: 600px;
+  position: relative;
+}
+
+.timeline-header {
+  display: flex;
+  border-bottom: 2px solid var(--gray-200);
+  padding-bottom: 4px;
+  margin-bottom: 4px;
+}
+
+.timeline-label-col {
+  width: 100px;
+  min-width: 100px;
+  flex-shrink: 0;
+  padding: 6px 8px;
+}
+
+.timeline-bar-col {
+  flex: 1;
+  position: relative;
+  min-height: 30px;
+}
+
+.timeline-month {
+  position: absolute;
+  top: 0;
+  font-size: 0.7rem;
+  color: var(--gray-500);
+  border-left: 1px solid var(--gray-200);
+  padding-left: 3px;
+  height: 100%;
+}
+
+.timeline-today {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  border-left: 2px solid var(--red);
+  z-index: 2;
+}
+
+.timeline-today span {
+  position: absolute;
+  top: -2px;
+  left: 4px;
+  font-size: 0.65rem;
+  color: var(--red);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.timeline-today-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-left: 2px dashed rgba(230, 57, 70, 0.3);
+  z-index: 1;
+}
+
+.timeline-row {
+  display: flex;
+  border-bottom: 1px solid var(--gray-100);
+  cursor: pointer;
+  transition: background var(--transition);
+}
+
+.timeline-row:hover {
+  background: var(--green-pale);
+}
+
+.timeline-animal-code {
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: var(--green-main);
+}
+
+.timeline-animal-name {
+  font-size: 0.7rem;
+  color: var(--gray-500);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.timeline-med-bar {
+  position: absolute;
+  height: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-radius: 3px;
+  border: 2px solid;
+  min-width: 4px;
+  z-index: 2;
+}
+
+.timeline-med-bar.overdue {
+  background: repeating-linear-gradient(
+    45deg,
+    var(--red-light),
+    var(--red-light) 3px,
+    #fff 3px,
+    #fff 6px
+  ) !important;
+  border-color: var(--red) !important;
+}
+
+.timeline-med-dot {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  z-index: 2;
+}
+
 /* ---- Responsive adjustments ---- */
 @media (min-width: 480px) {
   .stats-grid {
