@@ -180,6 +180,7 @@ const Animais = {
     const nascimento = document.getElementById('cadNascimento').value;
     const codigoMae = document.getElementById('cadMae').value;
     const codigoPai = document.getElementById('cadPai').value;
+    const campo = document.getElementById('cadCampo').value;
     const fotoUrl = Animais.getFotoValue('cad');
     const obs = document.getElementById('cadObs').value.trim();
 
@@ -191,9 +192,14 @@ const Animais = {
       Utils.toast('Selecione a categoria', 'error');
       return;
     }
+    if (!campo) {
+      Utils.toast('Selecione o campo (localização)', 'error');
+      return;
+    }
 
     const animais = await DB.getAnimaisAtivos();
     const codigo = Utils.generateAnimalCode(categoria, codigoMae, codigoPai, animais);
+    const today = Utils.today();
 
     const animal = {
       id: Utils.generateId(),
@@ -204,8 +210,10 @@ const Animais = {
       data_nascimento: nascimento || '',
       codigo_mae: codigoMae || '',
       codigo_pai: codigoPai || '',
+      campo: campo,
+      campo_desde: today,
       foto_url: fotoUrl || '',
-      data_cadastro: Utils.today(),
+      data_cadastro: today,
       status: 'ativo',
       data_venda: '',
       observacoes: obs
@@ -223,6 +231,7 @@ const Animais = {
     document.getElementById('cadNome').value = '';
     document.getElementById('cadCategoria').value = '';
     document.getElementById('cadNascimento').value = '';
+    document.getElementById('cadCampo').value = '';
     document.getElementById('cadMae').value = '';
     document.getElementById('cadPai').value = '';
     document.getElementById('cadFoto').value = '';
@@ -249,6 +258,7 @@ const Animais = {
   async applyFilters() {
     const busca = document.getElementById('filterBusca').value.toLowerCase().trim();
     const categoria = document.getElementById('filterCategoria').value;
+    const campo = document.getElementById('filterCampo').value;
 
     let animais = await DB.getAnimaisAtivos();
 
@@ -261,8 +271,18 @@ const Animais = {
     if (categoria) {
       animais = animais.filter(a => a.categoria === categoria);
     }
+    if (campo) {
+      animais = animais.filter(a => a.campo === campo);
+    }
 
-    animais.sort((a, b) => a.codigo.localeCompare(b.codigo, undefined, { numeric: true }));
+    // Sort: Campo de Cima first, then Campo de Baixo, then no campo; within each group by código
+    animais.sort((a, b) => {
+      const campoOrder = { campo_cima: 0, campo_baixo: 1 };
+      const ca = campoOrder[a.campo] !== undefined ? campoOrder[a.campo] : 2;
+      const cb = campoOrder[b.campo] !== undefined ? campoOrder[b.campo] : 2;
+      if (ca !== cb) return ca - cb;
+      return a.codigo.localeCompare(b.codigo, undefined, { numeric: true });
+    });
 
     const container = document.getElementById('animaisList');
 
@@ -276,23 +296,45 @@ const Animais = {
       return;
     }
 
-    container.innerHTML = animais.map(a => `
-      <div class="card" onclick="App.navigate('ficha', '${a.id}')">
-        <div class="card-header">
-          <div class="card-photo">
-            ${a.foto_url
-              ? `<img src="${a.foto_url}" alt="${a.nome}" onerror="this.parentElement.innerHTML='${Utils.categoryEmoji(a.categoria)}'">`
-              : Utils.categoryEmoji(a.categoria)
-            }
-          </div>
-          <div class="card-info">
-            <div class="card-code">${a.codigo}</div>
-            <div class="card-name">${a.nome}</div>
-            <div class="card-category">${Utils.categoryLabel(a.categoria)}</div>
+    // Group by campo with headers
+    let html = '';
+    let lastCampo = null;
+    const today = Utils.today();
+
+    animais.forEach(a => {
+      if (a.campo !== lastCampo) {
+        lastCampo = a.campo;
+        const campoLabel = Utils.campoLabel(a.campo);
+        html += `<div class="campo-group-header">${campoLabel}</div>`;
+      }
+
+      const diasNoCampo = a.campo_desde ? Utils.diffDays(a.campo_desde, today) : null;
+      const diasLabel = diasNoCampo !== null ? `${diasNoCampo}d no campo` : '';
+
+      html += `
+        <div class="card" onclick="App.navigate('ficha', '${a.id}')">
+          <div class="card-header">
+            <div class="card-photo">
+              ${a.foto_url
+                ? `<img src="${a.foto_url}" alt="${a.nome}" onerror="this.parentElement.innerHTML='${Utils.categoryEmoji(a.categoria)}'">`
+                : Utils.categoryEmoji(a.categoria)
+              }
+            </div>
+            <div class="card-info">
+              <div class="card-code">${a.codigo}</div>
+              <div class="card-name">${a.nome}</div>
+              <div class="card-category">
+                ${Utils.categoryLabel(a.categoria)}
+                ${a.campo ? `<span class="badge-campo badge-${a.campo}">${Utils.campoLabel(a.campo)}</span>` : ''}
+                ${diasLabel ? `<span class="badge-dias">${diasLabel}</span>` : ''}
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    `).join('');
+      `;
+    });
+
+    container.innerHTML = html;
   },
 
   /**
@@ -334,6 +376,13 @@ const Animais = {
     infoHtml += `<div class="info-row"><span class="info-label">Nascimento</span><span class="info-value">${Utils.formatDate(animal.data_nascimento)}</span></div>`;
     infoHtml += `<div class="info-row"><span class="info-label">Mãe</span><span class="info-value">${mae ? mae.codigo + ' — ' + mae.nome : (animal.codigo_mae || '—')}</span></div>`;
     infoHtml += `<div class="info-row"><span class="info-label">Pai</span><span class="info-value">${pai ? pai.codigo + ' — ' + pai.nome : (animal.codigo_pai || '—')}</span></div>`;
+    if (animal.campo) {
+      const diasNoCampo = animal.campo_desde ? Utils.diffDays(animal.campo_desde, Utils.today()) : null;
+      infoHtml += `<div class="info-row"><span class="info-label">Campo</span><span class="info-value">${Utils.campoLabel(animal.campo)}${diasNoCampo !== null ? ` (${diasNoCampo} dias)` : ''}</span></div>`;
+      if (animal.campo_desde) {
+        infoHtml += `<div class="info-row"><span class="info-label">No campo desde</span><span class="info-value">${Utils.formatDate(animal.campo_desde)}</span></div>`;
+      }
+    }
     infoHtml += `<div class="info-row"><span class="info-label">Cadastro</span><span class="info-value">${Utils.formatDate(animal.data_cadastro)}</span></div>`;
     if (animal.observacoes) {
       infoHtml += `<div class="info-row"><span class="info-label">Observações</span><span class="info-value">${animal.observacoes}</span></div>`;
@@ -418,6 +467,7 @@ const Animais = {
 
     document.getElementById('editNome').value = animal.nome;
     document.getElementById('editNascimento').value = animal.data_nascimento || '';
+    document.getElementById('editCampo').value = animal.campo || '';
     document.getElementById('editMae').value = animal.codigo_mae || '';
     document.getElementById('editPai').value = animal.codigo_pai || '';
     // Load existing photo into preview
@@ -449,6 +499,12 @@ const Animais = {
 
     animal.nome = nome;
     animal.data_nascimento = document.getElementById('editNascimento').value || '';
+    const novoCampo = document.getElementById('editCampo').value || '';
+    // If campo changed, update campo_desde
+    if (novoCampo !== (animal.campo || '')) {
+      animal.campo = novoCampo;
+      animal.campo_desde = Utils.today();
+    }
     animal.codigo_mae = document.getElementById('editMae').value || '';
     animal.codigo_pai = document.getElementById('editPai').value || '';
     animal.foto_url = Animais.getFotoValue('edit') || '';
@@ -600,6 +656,33 @@ const Animais = {
     });
 
     Utils.toast(`"${animal.nome}" agora é ${Utils.categoryLabel(novaCategoria)} com código ${novoCodigo}!`, 'success');
+    App.navigate('ficha', animal.id);
+  },
+
+  /**
+   * Move o animal para outro campo
+   */
+  async moverCampo() {
+    const animal = await DB.getAnimal(Animais.currentAnimalId);
+    if (!animal) return;
+
+    const campoAtual = animal.campo || '';
+    const novoCampo = campoAtual === 'campo_cima' ? 'campo_baixo' : 'campo_cima';
+    const novoLabel = Utils.campoLabel(novoCampo);
+
+    const confirmed = await Utils.confirm(
+      'Mover Campo',
+      `Mover "${animal.nome}" (${animal.codigo}) para ${novoLabel}?`
+    );
+    if (!confirmed) return;
+
+    animal.campo = novoCampo;
+    animal.campo_desde = Utils.today();
+
+    await DB.saveAnimal(animal);
+    await Sync.queueOperation('updateAnimal', animal);
+
+    Utils.toast(`"${animal.nome}" movido para ${novoLabel}!`, 'success');
     App.navigate('ficha', animal.id);
   },
 

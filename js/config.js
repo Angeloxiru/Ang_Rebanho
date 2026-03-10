@@ -11,6 +11,9 @@ const Config = {
     const alertaDias = await DB.getConfig('alerta_medicacao_dias') || '60';
     document.getElementById('configAlertaDias').value = alertaDias;
 
+    const autoPromocao = await DB.getConfig('auto_promocao_meses') || '12';
+    document.getElementById('configAutoPromocao').value = autoPromocao;
+
     // Load API URL
     const apiUrl = await DB.getConfig('api_url') || '';
     document.getElementById('configApiUrl').value = apiUrl;
@@ -31,10 +34,21 @@ const Config = {
       return;
     }
 
+    const autoPromocao = document.getElementById('configAutoPromocao').value;
+    if (!autoPromocao || parseInt(autoPromocao) < 1) {
+      Utils.toast('Informe um número válido de meses para promoção', 'error');
+      return;
+    }
+
     await DB.setConfig('alerta_medicacao_dias', alertaDias);
+    await DB.setConfig('auto_promocao_meses', autoPromocao);
     await Sync.queueOperation('updateConfiguracao', {
       chave: 'alerta_medicacao_dias',
       valor: alertaDias
+    });
+    await Sync.queueOperation('updateConfiguracao', {
+      chave: 'auto_promocao_meses',
+      valor: autoPromocao
     });
 
     Utils.toast('Configurações salvas!', 'success');

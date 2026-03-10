@@ -76,6 +76,11 @@
           <option value="terneira">Terneiras</option>
           <option value="terneiro">Terneiros</option>
         </select>
+        <select id="filterCampo" onchange="Animais.applyFilters()">
+          <option value="">Todos os campos</option>
+          <option value="campo_cima">Campo de Cima</option>
+          <option value="campo_baixo">Campo de Baixo</option>
+        </select>
       </div>
       <div id="animaisList"></div>
     </section>
@@ -105,6 +110,15 @@
       <div class="form-group">
         <label for="cadNascimento">Data de Nascimento</label>
         <input type="date" id="cadNascimento">
+      </div>
+
+      <div class="form-group">
+        <label for="cadCampo">Campo (Localização) *</label>
+        <select id="cadCampo">
+          <option value="">Selecione...</option>
+          <option value="campo_cima">Campo de Cima</option>
+          <option value="campo_baixo">Campo de Baixo</option>
+        </select>
       </div>
 
       <div class="form-group">
@@ -168,6 +182,15 @@
       <div class="form-group">
         <label for="editNascimento">Data de Nascimento</label>
         <input type="date" id="editNascimento">
+      </div>
+
+      <div class="form-group">
+        <label for="editCampo">Campo (Localização)</label>
+        <select id="editCampo">
+          <option value="">Selecione...</option>
+          <option value="campo_cima">Campo de Cima</option>
+          <option value="campo_baixo">Campo de Baixo</option>
+        </select>
       </div>
 
       <div class="form-group">
@@ -238,6 +261,7 @@
       </div>
 
       <div class="btn-group" style="margin-bottom: 16px;">
+        <button class="btn btn-outline btn-sm" onclick="Animais.moverCampo()">Mover Campo</button>
         <button class="btn btn-secondary btn-sm" onclick="Animais.mudarCategoria()">Mudar Categoria</button>
         <button class="btn btn-danger btn-sm" onclick="Animais.venderAnimal()">Vender</button>
       </div>
@@ -276,6 +300,8 @@
         <label>Animais * <span class="hint" id="medLoteCount">(0 selecionados)</span></label>
         <div class="med-select-actions">
           <button type="button" class="btn btn-outline btn-sm" onclick="Medicacoes.selecionarTodos()">Todos</button>
+          <button type="button" class="btn btn-outline btn-sm" onclick="Medicacoes.selecionarPorCampo('campo_cima')">Campo de Cima</button>
+          <button type="button" class="btn btn-outline btn-sm" onclick="Medicacoes.selecionarPorCampo('campo_baixo')">Campo de Baixo</button>
           <button type="button" class="btn btn-outline btn-sm" onclick="Medicacoes.deselecionarTodos()">Nenhum</button>
         </div>
         <div class="med-animal-list" id="medAnimalList"></div>
@@ -371,6 +397,12 @@
         <label for="configAlertaDias">Alertar medicação atrasada (dias)</label>
         <input type="number" id="configAlertaDias" min="1" max="365">
         <div class="config-hint">Animais sem medicação há mais de X dias aparecerão no alerta</div>
+      </div>
+
+      <div class="config-item">
+        <label for="configAutoPromocao">Promoção automática (meses)</label>
+        <input type="number" id="configAutoPromocao" min="1" max="36" value="12">
+        <div class="config-hint">Terneiros/terneiras passam a novilhos/novilhas automaticamente após X meses</div>
       </div>
 
       <button class="btn btn-primary" onclick="Config.salvar()" style="margin-bottom: 16px;">Salvar Configurações</button>

@@ -937,6 +937,47 @@ body {
   font-size: 0.9rem;
 }
 
+/* ---- Campo badges and grouping ---- */
+.badge-campo {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  margin-left: 4px;
+}
+
+.badge-campo_cima {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+.badge-campo_baixo {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.badge-dias {
+  display: inline-block;
+  font-size: 0.7rem;
+  color: var(--gray-500);
+  margin-left: 4px;
+}
+
+.campo-group-header {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--gray-700);
+  padding: 12px 4px 6px;
+  border-bottom: 2px solid var(--green-light);
+  margin-bottom: 8px;
+  margin-top: 8px;
+}
+
+.campo-group-header:first-child {
+  margin-top: 0;
+}
+
 /* ---- Alert danger ---- */
 .alert-item.alert-danger {
   border-left-color: var(--red);
