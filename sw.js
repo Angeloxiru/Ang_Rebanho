@@ -2,7 +2,7 @@
    sw.js — Service Worker para cache offline
    ======================================== */
 
-const CACHE_NAME = 'rebanho-v1';
+const CACHE_NAME = 'rebanho-v2';
 const ASSETS = [
   './',
   './index.html',

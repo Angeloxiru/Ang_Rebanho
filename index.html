@@ -121,9 +121,23 @@
       </div>
 
       <div class="form-group">
-        <label for="cadFoto">Link da Foto</label>
-        <input type="url" id="cadFoto" placeholder="Cole a URL da foto aqui">
-        <span class="hint">Suba a foto no Google Drive e cole o link aqui</span>
+        <label>Foto do Animal</label>
+        <div class="photo-capture" id="cadPhotoCapture">
+          <div class="photo-preview" id="cadPhotoPreview">
+            <span class="photo-placeholder">📷</span>
+          </div>
+          <div class="photo-actions">
+            <button type="button" class="btn btn-outline btn-sm" onclick="Animais.tirarFoto('cad')">📷 Tirar Foto</button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="Animais.escolherFoto('cad')">🖼️ Galeria</button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="Animais.toggleUrlInput('cad')">🔗 URL</button>
+          </div>
+          <input type="file" id="cadFotoFile" accept="image/*" capture="environment" style="display:none" onchange="Animais.onFotoSelected(this, 'cad')">
+          <input type="file" id="cadFotoGaleria" accept="image/*" style="display:none" onchange="Animais.onFotoSelected(this, 'cad')">
+          <div class="photo-url-input" id="cadUrlInput" style="display:none">
+            <input type="url" id="cadFoto" placeholder="Cole a URL da foto aqui">
+          </div>
+          <button type="button" class="btn-remove-photo" id="cadRemovePhoto" style="display:none" onclick="Animais.removerFoto('cad')">Remover foto</button>
+        </div>
       </div>
 
       <div class="form-group">
@@ -168,8 +182,23 @@
       </div>
 
       <div class="form-group">
-        <label for="editFoto">Link da Foto</label>
-        <input type="url" id="editFoto" placeholder="Cole a URL da foto aqui">
+        <label>Foto do Animal</label>
+        <div class="photo-capture" id="editPhotoCapture">
+          <div class="photo-preview" id="editPhotoPreview">
+            <span class="photo-placeholder">📷</span>
+          </div>
+          <div class="photo-actions">
+            <button type="button" class="btn btn-outline btn-sm" onclick="Animais.tirarFoto('edit')">📷 Tirar Foto</button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="Animais.escolherFoto('edit')">🖼️ Galeria</button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="Animais.toggleUrlInput('edit')">🔗 URL</button>
+          </div>
+          <input type="file" id="editFotoFile" accept="image/*" capture="environment" style="display:none" onchange="Animais.onFotoSelected(this, 'edit')">
+          <input type="file" id="editFotoGaleria" accept="image/*" style="display:none" onchange="Animais.onFotoSelected(this, 'edit')">
+          <div class="photo-url-input" id="editUrlInput" style="display:none">
+            <input type="url" id="editFoto" placeholder="Cole a URL da foto aqui">
+          </div>
+          <button type="button" class="btn-remove-photo" id="editRemovePhoto" style="display:none" onclick="Animais.removerFoto('edit')">Remover foto</button>
+        </div>
       </div>
 
       <div class="form-group">
