@@ -178,8 +178,8 @@ const Animais = {
   /**
    * Chamado quando a categoria muda no formulário de cadastro
    */
-  onCategoriaChange() {
-    Animais.populateParentSelects('cadMae', 'cadPai');
+  async onCategoriaChange() {
+    await Animais.populateParentSelects('cadMae', 'cadPai');
     Animais.previewCode();
   },
 
