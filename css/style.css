@@ -254,6 +254,30 @@ body {
   box-shadow: var(--shadow);
 }
 
+.stat-card-total {
+  background: var(--green-main);
+}
+.stat-card-total .stat-number {
+  color: var(--white);
+}
+.stat-card-total .stat-label {
+  color: var(--green-pale);
+}
+
+.stat-card-cima {
+  background: var(--green-pale);
+}
+.stat-card-cima .stat-number {
+  color: var(--green-dark);
+}
+
+.stat-card-baixo {
+  background: var(--yellow-light);
+}
+.stat-card-baixo .stat-number {
+  color: var(--gray-700);
+}
+
 .stat-number {
   font-size: 1.5rem;
   font-weight: 700;
