@@ -182,8 +182,13 @@ const App = {
 
   /**
    * Recarrega a tela atual (usado após sync)
+   * Não recarrega telas de formulário para não perder dados do usuário
    */
   refreshCurrentScreen() {
+    const formScreens = ['cadastroAnimal', 'editarAnimal', 'registrarMedicacao', 'registrarCio', 'mudarCategoria'];
+    if (formScreens.includes(App.currentScreen)) {
+      return; // Don't refresh form screens — would wipe user input
+    }
     App.navigate(App.currentScreen, Animais.currentAnimalId);
   }
 };
