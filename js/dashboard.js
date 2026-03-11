@@ -21,20 +21,33 @@ const Dashboard = {
     const counts = {
       vaca: 0, touro: 0, novilha: 0, novilho: 0, terneira: 0, terneiro: 0
     };
+    let campoCima = 0;
+    let campoBaixo = 0;
 
     animais.forEach(a => {
       if (counts[a.categoria] !== undefined) {
         counts[a.categoria]++;
       }
+      if (a.campo === 'campo_cima') campoCima++;
+      if (a.campo === 'campo_baixo') campoBaixo++;
     });
 
     const total = animais.length;
+    const bezerros = counts.terneiro + counts.terneira + counts.novilho + counts.novilha;
 
     const grid = document.getElementById('statsGrid');
     grid.innerHTML = `
-      <div class="stat-card">
+      <div class="stat-card stat-card-total">
         <div class="stat-number">${total}</div>
         <div class="stat-label">Total</div>
+      </div>
+      <div class="stat-card stat-card-cima">
+        <div class="stat-number">${campoCima}</div>
+        <div class="stat-label">Campo de Cima</div>
+      </div>
+      <div class="stat-card stat-card-baixo">
+        <div class="stat-number">${campoBaixo}</div>
+        <div class="stat-label">Campo de Baixo</div>
       </div>
       <div class="stat-card">
         <div class="stat-number">${counts.vaca}</div>
@@ -45,16 +58,8 @@ const Dashboard = {
         <div class="stat-label">Touros</div>
       </div>
       <div class="stat-card">
-        <div class="stat-number">${counts.novilha}</div>
-        <div class="stat-label">Novilhas</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-number">${counts.novilho}</div>
-        <div class="stat-label">Novilhos</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-number">${counts.terneira + counts.terneiro}</div>
-        <div class="stat-label">Terneiros</div>
+        <div class="stat-number">${bezerros}</div>
+        <div class="stat-label">Bezerros</div>
       </div>
     `;
   },
