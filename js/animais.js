@@ -79,7 +79,7 @@ const Animais = {
         canvas.width = w;
         canvas.height = h;
         canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
         Animais.photos[prefix].push(dataUrl);
         Animais.renderPhotoThumbs(prefix);
       };
