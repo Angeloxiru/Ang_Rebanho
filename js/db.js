@@ -239,8 +239,31 @@ const DB = {
    */
   async replaceAllData(animais, medicacoes, cios, configuracoes) {
     if (animais) {
+      // Preserve local base64 photos (not synced to server)
+      const localAnimais = await DB.getAll('animais');
+      const localPhotoMap = {};
+      localAnimais.forEach(a => {
+        const photos = {};
+        ['foto_url', 'foto_url2', 'foto_url3'].forEach(key => {
+          if (a[key] && a[key].startsWith('data:')) {
+            photos[key] = a[key];
+          }
+        });
+        if (Object.keys(photos).length > 0) {
+          localPhotoMap[a.id] = photos;
+        }
+      });
+
       await DB.clear('animais');
       for (const a of animais) {
+        // Restore local photos if server doesn't have them
+        if (localPhotoMap[a.id]) {
+          ['foto_url', 'foto_url2', 'foto_url3'].forEach(key => {
+            if ((!a[key] || a[key] === '') && localPhotoMap[a.id][key]) {
+              a[key] = localPhotoMap[a.id][key];
+            }
+          });
+        }
         await DB.put('animais', a);
       }
     }
