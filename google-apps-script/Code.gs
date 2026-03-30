@@ -64,6 +64,69 @@ function formatCellValue(value) {
   return String(value);
 }
 
+/**
+ * Retorna ou cria a pasta "Rebanho_Fotos" no Google Drive
+ */
+function getPhotosFolder() {
+  var folders = DriveApp.getFoldersByName('Rebanho_Fotos');
+  if (folders.hasNext()) {
+    return folders.next();
+  }
+  return DriveApp.createFolder('Rebanho_Fotos');
+}
+
+/**
+ * Salva uma foto base64 no Google Drive e retorna a URL pública
+ * Se não for base64 (já é URL), retorna como está
+ */
+function savePhotoToDrive(base64Data, animalId, photoIndex) {
+  if (!base64Data || base64Data === '') return '';
+  // If it's already a URL (not base64), return as-is
+  if (!base64Data.match(/^data:image\//)) return base64Data;
+
+  try {
+    // Extract MIME type and data
+    var parts = base64Data.split(',');
+    var mimeMatch = parts[0].match(/data:(image\/\w+);base64/);
+    var mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+    var ext = mimeType === 'image/png' ? 'png' : 'jpg';
+    var rawData = Utilities.base64Decode(parts[1]);
+    var blob = Utilities.newBlob(rawData, mimeType, animalId + '_foto' + photoIndex + '.' + ext);
+
+    var folder = getPhotosFolder();
+    // Remove old photo if exists (same name)
+    var existing = folder.getFilesByName(blob.getName());
+    while (existing.hasNext()) {
+      existing.next().setTrashed(true);
+    }
+
+    var file = folder.createFile(blob);
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+    // Return direct thumbnail URL that works in browsers
+    return 'https://drive.google.com/thumbnail?id=' + file.getId() + '&sz=w800';
+  } catch (err) {
+    Logger.log('Error saving photo to Drive: ' + err.toString());
+    return ''; // Return empty on error, don't block the sync
+  }
+}
+
+/**
+ * Processa campos de foto de um animal: salva base64 no Drive, retorna URLs
+ */
+function processAnimalPhotos(body) {
+  var photoUrls = {};
+  var fields = ['foto_url', 'foto_url2', 'foto_url3'];
+  for (var i = 0; i < fields.length; i++) {
+    var field = fields[i];
+    if (body[field] && body[field].match && body[field].match(/^data:image\//)) {
+      photoUrls[field] = savePhotoToDrive(body[field], body.id, i + 1);
+      body[field] = photoUrls[field]; // Replace base64 with Drive URL in body
+    }
+  }
+  return photoUrls;
+}
+
 function sheetToArray(sheet) {
   const data = sheet.getDataRange().getValues();
   if (data.length <= 1) return [];
@@ -159,15 +222,19 @@ function doPost(e) {
         if (findRowIndex(sheet, body.id) !== -1) {
           return response(true, { id: body.id, duplicate: true }, null);
         }
+        // Upload base64 photos to Google Drive
+        var addPhotoUrls = processAnimalPhotos(body);
         const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
         const row = objectToRow(body, headers);
         sheet.appendRow(row);
-        return response(true, { id: body.id }, null);
+        return response(true, { id: body.id, photoUrls: addPhotoUrls }, null);
       }
 
       case 'updateAnimal': {
         const sheet = getSheet('Animais');
         const rowIndex = findRowIndex(sheet, body.id);
+        // Upload base64 photos to Google Drive
+        var updPhotoUrls = processAnimalPhotos(body);
         const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
         const row = objectToRow(body, headers);
         if (rowIndex === -1) {
@@ -176,7 +243,7 @@ function doPost(e) {
         } else {
           sheet.getRange(rowIndex, 1, 1, headers.length).setValues([row]);
         }
-        return response(true, { id: body.id }, null);
+        return response(true, { id: body.id, photoUrls: updPhotoUrls }, null);
       }
 
       case 'venderAnimal': {

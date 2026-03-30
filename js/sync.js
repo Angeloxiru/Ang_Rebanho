@@ -74,18 +74,23 @@ const Sync = {
   },
 
   /**
-   * Remove base64 photo data from animal objects before syncing.
-   * Base64 photos are too large for Google Sheets cells (~50KB limit).
-   * Photos remain in IndexedDB locally.
+   * After sync, if the server returned Drive URLs for photos,
+   * update the local IndexedDB record so we don't re-upload next time.
    */
-  stripBase64Photos(data) {
-    const cleaned = Object.assign({}, data);
+  async updateLocalPhotos(animalId, photoUrls) {
+    if (!photoUrls || Object.keys(photoUrls).length === 0) return;
+    const animal = await DB.getAnimal(animalId);
+    if (!animal) return;
+    let changed = false;
     ['foto_url', 'foto_url2', 'foto_url3'].forEach(key => {
-      if (cleaned[key] && cleaned[key].startsWith('data:')) {
-        cleaned[key] = ''; // Remove base64, keep URL photos
+      if (photoUrls[key] && photoUrls[key] !== '') {
+        animal[key] = photoUrls[key];
+        changed = true;
       }
     });
-    return cleaned;
+    if (changed) {
+      await DB.saveAnimal(animal);
+    }
   },
 
   /**
@@ -117,20 +122,14 @@ const Sync = {
       // Send operations one by one
       for (const item of queue) {
         let result = null;
-        let syncData = item.data;
-
-        // Strip base64 photos from animal data before sending
-        if (item.action === 'addAnimal' || item.action === 'updateAnimal') {
-          syncData = Sync.stripBase64Photos(syncData);
-        }
 
         try {
           switch (item.action) {
             case 'addAnimal':
-              result = await API.addAnimal(syncData);
+              result = await API.addAnimal(item.data);
               break;
             case 'updateAnimal':
-              result = await API.updateAnimal(syncData);
+              result = await API.updateAnimal(item.data);
               break;
             case 'venderAnimal':
               result = await API.venderAnimal(item.data.id, item.data.data_venda);
@@ -159,6 +158,10 @@ const Sync = {
         }
 
         if (result !== null) {
+          // If server returned Drive photo URLs, update local record
+          if (result.photoUrls && item.data.id) {
+            await Sync.updateLocalPhotos(item.data.id, result.photoUrls);
+          }
           await DB.removeSyncItem(item.id);
           synced++;
         } else {
