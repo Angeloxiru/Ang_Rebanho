@@ -209,6 +209,34 @@ const Sync = {
   },
 
   /**
+   * Re-enfileira todos os animais que ainda têm fotos base64 locais
+   * para que sejam enviados ao Google Drive
+   */
+  async resyncPhotos() {
+    const animais = await DB.getAnimais();
+    let queued = 0;
+
+    for (const animal of animais) {
+      const hasBase64 = ['foto_url', 'foto_url2', 'foto_url3'].some(
+        key => animal[key] && animal[key].startsWith('data:')
+      );
+      if (hasBase64) {
+        await DB.addToSyncQueue({ action: 'updateAnimal', data: animal, retries: 0 });
+        queued++;
+      }
+    }
+
+    await Sync.updateSyncBar();
+
+    if (queued === 0) {
+      Utils.toast('Todas as fotos já estão sincronizadas!', 'success');
+    } else {
+      Utils.toast(`${queued} animal(is) com fotos para enviar`, 'success');
+      Sync.syncNow();
+    }
+  },
+
+  /**
    * Puxa dados frescos do servidor
    */
   async pullFromServer() {
