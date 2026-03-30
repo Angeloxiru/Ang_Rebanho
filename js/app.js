@@ -2,6 +2,8 @@
    app.js — Lógica principal e roteamento
    ======================================== */
 
+const APP_VERSION = '1.5.0';
+
 const App = {
   currentScreen: 'dashboard',
   history: [],
@@ -11,6 +13,9 @@ const App = {
    */
   async init() {
     try {
+      // Show version in header
+      document.getElementById('appVersion').textContent = 'v' + APP_VERSION;
+
       // Init IndexedDB
       await DB.init();
       await DB.initDefaults();
