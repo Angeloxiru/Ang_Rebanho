@@ -209,6 +209,61 @@ const Sync = {
   },
 
   /**
+   * Testa a conexão com a API e o upload de fotos ao Drive
+   */
+  async testPhotoSync() {
+    const configured = await API.isConfigured();
+    if (!configured) {
+      Utils.toast('Configure a URL da API primeiro', 'error');
+      return;
+    }
+    if (!navigator.onLine) {
+      Utils.toast('Sem conexão com a internet', 'error');
+      return;
+    }
+
+    Utils.toast('Testando conexão...', 'success');
+
+    // 1. Test basic API connection
+    try {
+      const animais = await API.fetchAnimais();
+      if (animais === null) {
+        Utils.toast('Erro: API não respondeu. Verifique a URL da API.', 'error');
+        return;
+      }
+      Utils.toast('API conectada! Testando upload de foto...', 'success');
+    } catch (err) {
+      Utils.toast('Erro ao conectar na API: ' + err.message, 'error');
+      return;
+    }
+
+    // 2. Test photo upload with a tiny 1x1 pixel test image
+    try {
+      const testBase64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAFBABAAAAAAAAAAAAAAAAAAAACf/EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhEDEQA/AKgA/9k=';
+      const result = await API.post('updateAnimal', {
+        id: '__test_photo__',
+        foto_url: testBase64,
+        nome: 'TESTE',
+        codigo: 'TESTE',
+        categoria: '',
+        status: 'teste'
+      });
+
+      if (result === null) {
+        Utils.toast('Erro: API não conseguiu processar a foto. Verifique se o Code.gs foi atualizado e se o script foi re-autorizado (Drive).', 'error');
+      } else if (result.photoUrls && result.photoUrls.foto_url) {
+        Utils.toast('Upload de fotos funcionando! URL: ' + result.photoUrls.foto_url.substring(0, 50) + '...', 'success');
+        // Clean up test row from sheet
+        try { await API.post('deleteTestRow', { id: '__test_photo__' }); } catch(e) {}
+      } else {
+        Utils.toast('API respondeu mas sem URL de foto. Verifique se o Code.gs tem as funções getPhotosFolder/savePhotoToDrive/processAnimalPhotos.', 'error');
+      }
+    } catch (err) {
+      Utils.toast('Erro no teste: ' + err.message, 'error');
+    }
+  },
+
+  /**
    * Re-enfileira todos os animais que ainda têm fotos base64 locais
    * para que sejam enviados ao Google Drive
    */

@@ -55,7 +55,14 @@ const API = {
         headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify({ action, ...body })
       });
-      const data = await response.json();
+      const text = await response.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (parseErr) {
+        console.error('API response not JSON:', text.substring(0, 200));
+        return null;
+      }
       if (data.success) return data.data;
       console.error('API error:', data.error);
       return null;
