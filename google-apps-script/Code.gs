@@ -364,6 +364,13 @@ function doPost(e) {
         return response(true, { results }, null);
       }
 
+      case 'deleteTestRow': {
+        var sheet = getSheet('Animais');
+        var ri = findRowIndex(sheet, '__test_photo__');
+        if (ri !== -1) sheet.deleteRow(ri);
+        return response(true, { deleted: ri !== -1 }, null);
+      }
+
       default:
         return response(false, null, 'Ação não reconhecida: ' + action);
     }
