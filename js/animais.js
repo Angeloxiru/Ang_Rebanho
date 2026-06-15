@@ -150,7 +150,7 @@ const Animais = {
         if (['vaca', 'novilha', 'terneira'].includes(a.categoria)) {
           maeSelect.innerHTML += `<option value="${a.codigo}">${label}</option>`;
         }
-        if (['touro', 'novilho', 'terneiro'].includes(a.categoria)) {
+        if (a.categoria === 'touro') {
           paiSelect.innerHTML += `<option value="${a.codigo}">${label}</option>`;
         }
       });
