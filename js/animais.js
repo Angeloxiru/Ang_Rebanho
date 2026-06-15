@@ -132,7 +132,7 @@ const Animais = {
    * Popula selects de mãe e pai no formulário de cadastro
    */
   async populateParentSelects(maeSelectId, paiSelectId, excludeId) {
-    const animais = await DB.getAnimaisAtivos();
+    const animais = await DB.getAnimais();
 
     const maeSelect = document.getElementById(maeSelectId);
     const paiSelect = document.getElementById(paiSelectId);
@@ -145,7 +145,8 @@ const Animais = {
       .filter(a => a.id !== excludeId)
       .sort((a, b) => a.codigo.localeCompare(b.codigo, undefined, { numeric: true }))
       .forEach(a => {
-        const label = `${a.codigo} — ${a.nome}`;
+        const vendido = a.status === 'vendido' ? ' (vendido)' : '';
+        const label = `${a.codigo} — ${a.nome}${vendido}`;
         if (['vaca', 'novilha', 'terneira'].includes(a.categoria)) {
           maeSelect.innerHTML += `<option value="${a.codigo}">${label}</option>`;
         }
