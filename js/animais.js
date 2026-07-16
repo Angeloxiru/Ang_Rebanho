@@ -147,7 +147,7 @@ const Animais = {
       .forEach(a => {
         const vendido = a.status === 'vendido' ? ' (vendido)' : '';
         const label = `${a.codigo} — ${a.nome}${vendido}`;
-        if (['vaca', 'novilha', 'terneira'].includes(a.categoria)) {
+        if (a.categoria === 'vaca' && a.status === 'ativo') {
           maeSelect.innerHTML += `<option value="${a.codigo}">${label}</option>`;
         }
         if (a.categoria === 'touro') {

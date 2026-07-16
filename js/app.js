@@ -2,7 +2,7 @@
    app.js — Lógica principal e roteamento
    ======================================== */
 
-const APP_VERSION = '1.5.5';
+const APP_VERSION = '1.5.6';
 
 const App = {
   currentScreen: 'dashboard',
